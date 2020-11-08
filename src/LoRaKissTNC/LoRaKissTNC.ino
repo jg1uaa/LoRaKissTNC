@@ -1,12 +1,15 @@
-#include "LoRa.h"
+#include <RadioLib.h>
 #include "Config.h"
 #include "KISS.h"
 #define BUFFSIZE MTU-64
 
+enum intEvent { Nothing, RxDone, TxDone, CadDone };
+volatile enum intEvent waitFor = Nothing;
 bool kissMode = false;
 char mycall[16];
 char line_buffer[BUFFSIZE];
 int bufc = 0;
+SX1278 LoRa = new Module(pinNSS, pinDIO0, pinNRST, pinDIO1);
 
 void setup() {
   // put your setup code here, to run once:
@@ -17,54 +20,46 @@ void setup() {
   memset(rxBuffer, 0, sizeof(rxBuffer));
   memset(txBuffer, 0, sizeof(txBuffer));
 
-  LoRa.setPins(pinNSS, pinNRST, pinDIO0);
-
   startRadio();
 }
 
-void initLoRa() {
-  LoRa.setSignalBandwidth(bandWidthTable[loraBandwidth]);
-  LoRa.setSpreadingFactor(loraSpreadingFactor);
-  LoRa.setCodingRate4(loraCodingRate);
-  LoRa.setTxPower(loraTxPower);
-  LoRa.setPreambleLength(loraPrlen);
-  if (loraCRC) {
-    LoRa.enableCrc();
-  } else {
-    LoRa.disableCrc();
-  }
-  LoRa.setSyncWord(loraSyncWord);
+bool initLoRa() {
   mycall[0] = '\0';
+  LoRa.clearDio0Action();
+  waitFor = Nothing;
+  LoRa.reset();
 
-  LoRa.onCadDone(cadCallback);
-  LoRa.onReceive(receiveCallback);
-  LoRa.receive();
+  int state = LoRa.begin(loraFrequency, bandWidthTable[loraBandwidth],
+      loraSpreadingFactor, loraCodingRate, loraSyncWord, loraTxPower,
+      loraPrlen, 0);
+  if (state != ERR_NONE) {
+    return false;
+  }
+
+  LoRa.setCRC(loraCRC);
+  LoRa.setDio0Action(dio0Callback);
+  waitFor = RxDone;
+  LoRa.startReceive();
+  return true;
 }
 
 bool startRadio() {
-  if (!LoRa.begin(loraFrequency)) {
+  if (!initLoRa()) {
     kissIndicateError(ERROR_INITRADIO);
     Serial.println("FAIL");
     while(1);
-  } else {
-    initLoRa();
   }
 }
 
 void transmit(size_t size) {
-  size_t written = 0;
-
-  if (size > MTU) {
-    size = MTU;
+  LoRa.standby(); // stop receiver to disable interrupt
+  waitFor = TxDone;
+  LoRa.startTransmit(txBuffer, (size < MTU) ? size : MTU);
+  while (waitFor == TxDone) {
+    yield();
   }
-
-  LoRa.beginPacket();
-  for (size_t i; i < size; i++) {
-    LoRa.write(txBuffer[i]);
-    written++;
-  }
-  LoRa.endPacket();
-  LoRa.receive();
+  waitFor = RxDone;
+  LoRa.startReceive(); // start receiver again
 }
 
 void text_transmit(char* buffer) {
@@ -128,21 +123,29 @@ bool isOutboundReady() {
   return outboundReady;
 }
 
+#if 0 // XXX not implemented
 void cadCallback(boolean cadDetected) {
   if (cadDetected) {
     lastHeard = millis();
     channelBusy = true;
-    LoRa.receive();
+    LoRa.startReceive();
   } else {
     LoRa.CAD();
   }
   return;
 }
+#endif
 
-void receiveCallback(int packetSize) {
+void dio0Callback() {
+  if (waitFor != RxDone) {
+    waitFor = Nothing;
+    return;
+  }
+
+  int packetSize = LoRa.getPacketLength();
   readLength = 0;
-  lastRssi = LoRa.packetRssi();
-  lastSnr = LoRa.packetSnr();
+  lastRssi = LoRa.getRSSI();
+  lastSnr = LoRa.getSNR();
   getPacketData(packetSize);
 
   if (kissMode) {
@@ -185,7 +188,8 @@ void receiveCallback(int packetSize) {
   readLength = 0;
   lastHeard = millis();
   channelBusy = false;
-  LoRa.receive();
+  waitFor = Nothing;
+  // kick the receiver outside interrupt context
 }
 
 void escapedSerialWrite (uint8_t bufferByte) {
@@ -211,9 +215,7 @@ void kissIndicateError(uint8_t errorCode) {
 }
 
 void getPacketData(int packetLength) {
-  while (packetLength--) {
-    rxBuffer[readLength++] = LoRa.read();
-  }
+  LoRa.readData(rxBuffer, readLength = packetLength);
 }
 
 void recv_mesg(String& hiscall, String& rssi, String& snr, String& mesg) {
@@ -240,7 +242,7 @@ void set_Freq(uint32_t f) {
     mesg("ERR","Out of band.");
     return;
   }
-  loraFrequency = f;
+  loraFrequency = f / 1000000.0F;
   LoRa.setFrequency(loraFrequency);
 }
 
@@ -251,7 +253,7 @@ void set_BW(int bw) {
     return;
   }
   loraBandwidth = bw;
-  LoRa.setSignalBandwidth(bandWidthTable[loraBandwidth]);
+  LoRa.setBandwidth(bandWidthTable[loraBandwidth]);
 }
 
 void set_SF(int sf) {
@@ -271,7 +273,7 @@ void set_CR(int cr) {
     return;
   }
   loraCodingRate = cr;
-  LoRa.setCodingRate4(loraCodingRate);
+  LoRa.setCodingRate(loraCodingRate);
 }
 
 void set_Pwr(int pwr) {
@@ -281,7 +283,7 @@ void set_Pwr(int pwr) {
     return;
   }
   loraTxPower = pwr;
-  LoRa.setTxPower(loraTxPower);
+  LoRa.setOutputPower(loraTxPower);
 }
 
 void set_Call(char *call) {
@@ -307,6 +309,12 @@ void do_command(char buffer[]) {
   char *cmd, *call;
   uint32_t f;
   int bw, sf, cr, pwr, backoff;
+
+  // Calling RadioLib's function at setting Freq/BW/SF/CR turns SX127x
+  // stand-by state. To kick receiver later, set "wait for nothing"
+  // in advance.
+  LoRa.standby();
+  waitFor = Nothing;
 
   cmd = strtok(buffer," ");
   
@@ -388,6 +396,10 @@ void loop() {
         bufc = MTU - 16;
       }
     }
+  }
+  if (waitFor == Nothing) {
+    waitFor = RxDone;
+    LoRa.startReceive();
   }
 }
 

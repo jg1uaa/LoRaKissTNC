@@ -30,6 +30,7 @@
     const int pinNSS = 10;
     const int pinNRST = 9;
     const int pinDIO0 = 2;
+    const int pinDIO1 = 6;
     // const int pinLedRx = 5;
     // const int pinLedTx = 4;
 
@@ -39,6 +40,7 @@
     const int pinNSS  = 8;
     const int pinNRST = 4;
     const int pinDIO0 = 7;
+    const int pioDIO1 = 6;
   #endif
 
   const long serialBaudRate   = 9600;
@@ -59,11 +61,11 @@
   bool      loraCRC = false;
   int       loraSyncWord = 0x12;
 
-  uint32_t  bandWidthTable[] = { 7.8e3, 10.4e3, 15.6e3, 20.8e3, 31.25e3, 41.7e3, 62.5e3, 125e3, 250e3};
+  float bandWidthTable[] = { 7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0};
   uint32_t  loraBandwidth       = 2;
   const uint32_t freq_low  = 438.0E6;
   const uint32_t freq_high = 439.0E6;
-  uint32_t  loraFrequency       = 438.51E6;
+  float loraFrequency = 438.51;
 
   uint8_t txBuffer[MTU];
   uint8_t rxBuffer[MTU];
