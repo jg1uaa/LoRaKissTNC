@@ -9,42 +9,40 @@
 
 「テキストチャット」モードでは、LoRaモジュールにシリアル接続された端末から送られたテキストメッセージの平文を指定された周波数でLoRa変調により送信します。
 
-※1[Arduino LoRa](https://github.com/sandeepmistry/arduino-LoRa/blob/master/README.md)をベースにLoRaのChannel Activity Detection機能を追加したものを用いています。
+※1[w-ockham/LoRaKissTNC](https://github.com/w-ockham/LoRaKissTNC/)からフォークしており、改造版の[Arduino LoRa](https://github.com/sandeepmistry/arduino-LoRa/blob/master/README.md)の代わりに[RadioLib](https://github.com/jgromes/RadioLib/blob/master/README.md)を使用しています。
 
 ※2[APRS on LoRa](https://github.com/josefmtd/lora-aprs)のKISSモードTNCを流用しています。
 
+このフォークで提供されるソースコードの機能および操作方法は、フォーク元の[w-ockham/LoRaKissTNC](https://github.com/w-ockham/LoRaKissTNC/)と変わりません。ただし、APRSゲートウェイ関連および変更申請についてのファイルは削除しているため、README.mdからもこれらに関する説明は削除しています。ハードウェアの記述については、こちらで動作確認を行った機材に改めています。
+
 ## 通信方式
-詳細な通信方式は[プロトコル](https://github.com/w-ockham/LoRaKissTNC/blob/master/Protocol.md)を参照して下さい。
+詳細な通信方式は[プロトコル](https://github.com/jg1uaa/LoRaKissTNC/blob/jg1uaa/Protocol.md)を参照して下さい。
 
 ## ハードウェア
 
- * [Semtech SX1276/77/78/79](http://www.semtech.com/apps/product.php?pn=SX1276)を使ったボードで動作します。:
-   * [BSFrance LoRa32u4](https://bsfrance.fr/lora-long-range/1311-BSFrance-LoRa32u4-1KM-Long-Range-Board-Based-Atmega32u4-433MHz-LoRA-RA02-Module.html)
+ * [HopeRF RFM98W](https://www.hoperf.com/modules/lora/RFM98.html)を使ったLoRaシールドとArduino UNOの組み合わせで動作します。:
+   * [Dragino LoRa shield](https://www.dragino.com/products/lora/item/102-lora-shield.html)の互換品
 
-### Semtech SX1276/77/78/79
+### HopeRF RFM98W
 
-| Semtech SX1276/77/78/79 | Arduino |
+| HopeRF RFM98W | Arduino |
 | :---------------------: | :------:|
 | VCC | 3.3V |
 | GND | GND |
 | SCK | SCK |
 | MISO | MISO |
 | MOSI | MOSI |
-| NSS | 8 |
-| NRESET | 4 |
-| DIO0 | 7 |
+| NSS | 10 |
+| NRESET | 9 |
+| DIO0 | 2 |
+| DIO1 | 6 |
 
 
-`NSS`,`NRESET`,`DIO0`は`LoRa.setPins(csPin, resetPin, irqPin)`. で接続することが出来ます。ボードによってピン接続を変更して下さい。
+`NSS`,`NRESET`,`DIO0`,`DIO1`に対応するピンは[Config.h](https://github.com/jg1uaa/LoRaKissTNC/blob/jg1uaa/src/LoRaKissTNC/Config.h)で定義しています。LoRaシールドの設定に応じ、変更してください。
+
+RFM98Wの電源およびI/Oピンは3.3Vです。LoRaシールドではArduino UNOのI/Oピン(5V)に合わせるためのレベル変換を行っている点に注意してください。
 
 ## インストール方法
-### Arduino IDEにLoRa32u4ボードを追加
-1. ファイル→環境設定で、追加のボードマネージャのURLに以下を追加  
-   `https://adafruit.github.io/arduino-board-index/package_adafruit_index.json`
-2. ツール→ボードで`AdaFruit Feather32u4`を選択
-3. ツール→書込装置で`ArduinoISP`を選択
-
-### コンパイルと書き込み
 1. LoRaKissTNC.inoを開く  
 2. スケッチ→検証・コンパイルでコンパイル  
 3. スケッチ→マイコンボードに書き込むでArduinoへ書き込み  
@@ -108,70 +106,6 @@ LoRaの電波型式はF1Dとなります。430MHz帯では総務省告示第百�
 本プログラムでは送信前に所定時間(3sec)チャンネルのアクティビティを監視し、他局が送信をしていない場合に自局からの送信を行います。  
 衝突が起きた場合には3秒からここで指定された時間の範囲でランダムに待ち時間を入れます。拡散率が高い場合は衝突が起きる可能性が高いので、フレーム送出時間と同程度の長めのバックオフ時間(BW=62.5,SF=11,CR=8で10000ms程度)を設定してください。
 
-### APRSゲートウェイへのパッチ
-LoRaKissTNCはKISSプロトコルで受信パケットのRSSI/SNRを返します。APRSゲートウェイ側でも表示できるように[APRX](https://github.com/PhirePhly/aprx/blob/master/README)のパッチを用意しました。
-gitからクローン後(パッチはv2.9.0をベースにしています)、patchコマンドでパッチをあててください。
-
-```
-2020-01-14 16:41:53.564 JL1NIE-6  R(-55,11.50) JL1NIE-5>APDR15,WIDE1-1::JL1NIE-10:dx{23
-```
-
-aprf-rf.logの受信パケットを示すRフラグにRSSI/SNRが`R(RSSI,SNR)`の形式で入ります。
-またログからビーコン用のメッセージパケットを作るスクリプトも用意しました。
-自局位置についてはスクリプト埋め込みですので適宜修正してください。
-
-```
-#!/bin/sh
-tac  /var/log/aprx/aprx-rf.log | grep " R(" | head -n 1 | gawk '{match($2,/(.+)\..+/,t);match($4,/R\((.+)\,(.+)\)/,a);match($5,/([A-Z0-9\-]+)>/,c);printf("!3536.15N/13931.24E-LoRa station:%s %s RSSI=%s SNR=%s\n",t[1],c[1],a[1],a[2]);}'
-```
-
-### APRSゲートウェイの設定
-参考までにaprx.confの例を掲載します。
-運用に際してはAPRS網への負荷等、他局への影響を十分考慮の上設定するようお願いします。
-```
-mycall  JS1YFC-6　#自局コールサイン
-myloc lat 3536.05N lon 13931.22E　#自局位置
-
-<aprsis>
-        passcode 12345 #APRS-ISのパスワード
-        server    rotate.aprs2.net
-</aprsis>
-
-<logging>
-        pidfile /var/run/aprx.pid
-        rflog /var/log/aprx/aprx-rf.log
-        aprxlog /var/log/aprx/aprx.log
-</logging>
-
-<interface>
-        serial-device /dev/ttyACM0  9600 8n1    KISS
-        # TNCの初期文字列
-        # Freq=438.51MHz BW=15.6kHz SF=8 CR=8 Backofftime=10000ms
-        # <FEND><RET><FEND><CR>SET KISS 43851,3,8,8,10000<CR>
-        initstring "\xc0\xff\xc0\x0dSET KISS 43851,3,8,8,10000\x0d"
-        callsign     $mycall
-        tx-ok        true
-</interface>
-
-<beacon>
-        beaconmode aprsis
-        cycle-size  5m
-        #最後の受信局をビーコン表示
-        beacon exec /usr/local/bin/aprxLastseen.sh
-</beacon>
-
-<digipeater>
-        transmitter     $mycall
-        <source>
-                source        APRSIS
-                relay-type    third-party
-                ratelimit     240 480
-                via-path      WIDE1-1
-                msg-path      WIDE1-1
-                filter -t/st
-    </source>
-</digipeater>
-```
 ## テキストチャットモード
 テキストチャットモードでは端末から入力された文字を行単位で平文で送信します。
 行頭が`set`で始まる行はコマンド列として解釈されます。
@@ -255,7 +189,3 @@ TXpower=20
 ```sh
 set init
 ```
-# 変更申請について
-本スケッチを用いたLoRaトランシーバの申請方法はこちらです。
-
-[LoRaトランシーバの変更申請の届出方法](doc/申請方法.md)

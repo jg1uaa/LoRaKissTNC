@@ -1,5 +1,7 @@
 # LoRaトランシーバの通信方式
 
+以下に記した通信方式は、フォーク元となる[w-ockham/LoRaKissTNC](https://github.com/w-ockham/LoRaKissTNC/)の[LoRaトランシーバの通信方式](https://github.com/w-ockham/LoRaKissTNC/blob/master/Protocol.md)とまったく同じものです。
+
 ## LoRa変調
 LoRa変調は以下のパラメータを用います。
 
@@ -22,7 +24,7 @@ LoRaパケットフォーマットは以下の通りです。
 
 パケットはExplicitヘッダーモードで送信され、Explicitヘッダにはペイロード長、ペイロードのコーディングレート、
 ペイロードのCRCの有無（本方式では無）が入ります。ヘッダー自身はコーディングレート 4/8でCRC付きで送信されます。
-詳細については [Semtech SX1276/77/78/79](http://www.semtech.com/apps/product.php?pn=SX1276)データシートを参照して下さい。
+詳細については [HopeRF RFM98W データシート](https://www.hoperf.com/data/upload/portal/20190801/RFM98W-V2.0.pdf) (PDF) を参照して下さい。
 
 ### ペイロード
 ペイロードには平文を送る「平文ペイロード」とAX.25に準拠したパケットフォーマットで送る「AX.25ペイロード」の2種類があります。
