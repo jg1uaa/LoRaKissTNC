@@ -1,0 +1,154 @@
+% uplatex software
+% uplatex software
+% dvipdfmx software
+
+\documentclass[a4j,oneside]{ujbook}
+\usepackage[schinese,japanese]{pxbabel} % \foreignlanguage{schinese}{}
+\usepackage[dvipdfmx]{graphicx} % \includegraphics{}
+\usepackage{bmpsize}
+\usepackage[dvipdfmx]{hyperref} % \url{}
+\usepackage{pxjahyper} % 日本語しおり ※hyperref → pxjahyper の順であること
+\usepackage{enumitem} % \begin{description}[nextline]
+\usepackage{ascmac} % \yen
+\usepackage{here} % [H]
+\begin{document}
+
+\title{no title}
+\author{no name}
+\date{\today}
+
+%\maketitle
+%\tableofcontents
+
+\chapter*{添付資料: LoRa 通信方式において使用するソフトウェアについて}
+
+\section*{はじめに}
+
+本資料中の URL もしくはソースコードのファイル名はクリックすることで、該当する web page や GitHub 上のソースコードを閲覧することができるようになっている。
+
+\section*{使用するライブラリ}
+
+LoRa コントローラ (HopeRF RF98 あるいは Semtech SX1278 と呼ばれるもの) の制御には、RadioLib (\url{https://github.com/jgromes/RadioLib/}) を使用する。このライブラリは RF98/SX1278 に限らず、多種多様な無線モジュールを、可能な限り同一の操作方法で Arduino から制御できるように作られたものである。
+
+申請に用いる HopeRF RF98 は、Semtech SX1278 のラベルを変更しただけのものであり、同一の製品と言われている。RadioLib には RF98 の制御に対応するクラスは実装されていないが、SX1278 クラスを使用して制御することができるためにこれを使用し、本資料中の説明も SX1278 として進める。
+
+\section*{ライブラリの機能説明}
+
+RadioLib の SX1278 制御クラスの説明は \url{https://jgromes.github.io/RadioLib/class_s_x1278.html} にあり、そのうち LoRa 変調を使用して通信を行うために用いる主なメソッドを記す。
+
+\begin{description}[style=sameline]
+ \item[begin()] SX1278 を LoRa モードに設定して動作を開始
+ \item[reset()] SX1278 をリセット
+ \item[setFrequency()] 周波数設定 (137.0〜525.0 MHz)
+ \item[setBandwidth()] 周波数帯域幅の設定 (7.8〜500 kHz)
+ \item[setSpreadingFactor()] 拡散率 (SF) の設定 (6〜12)
+ \item[setCodingRate()] 誤り訂正符号 (CR) の設定
+ \item[setOutputPower()] 送信電力の設定 (2〜17 dBm)
+ \item[setGain()] 受信感度の設定 (0〜6)
+\end{description}
+
+送受信については、各種無線モジュールで共通に使用できるメソッド (PhysicalLayer Class, \url{https://jgromes.github.io/RadioLib/class_physical_layer.html}) から、代表的な以下の二つを記す。
+
+\begin{description}[style=sameline]
+ \item[transmit()] 文字列の送信
+ \item[receive()] 文字列の受信
+\end{description}
+
+これらのメソッドを使用してアプリケーションを作成するが、その際は setFrequency() による周波数設定はアマチュアバンド (430〜440 MHz) の範囲内とし、setBandwidth() による周波数帯域幅の設定も 30kHz 以下となるようにする。
+
+\section*{送信処理の流れ}
+
+RadioLib のスケッチ例 (\href{https://github.com/jgromes/RadioLib/blob/master/examples/SX127x/SX127x_Transmit/SX127x_Transmit.ino}{\tt{SX127x\_Transmit.ino}}) にある radio.transmit(const char* str) メソッドを使用した送信において、暗号化処理が含まれていないことを示すため、送信処理の流れを解説する。
+
+\begin{enumerate}
+ \item radio.transmit(const char* str) は、PhysicalLayer::transmit(const char* str, uint8\_t addr) に対応する\footnote{C++ においては addr の指定を省略した場合の初期値を定義でき、ここでは省略時に addr = 0 となるようヘッダファイルに記述されている。}。
+ \item PhysicalLayer::transmit(const char* str, uint8\_t addr) の処理は\newline\href{https://github.com/jgromes/RadioLib/blob/master/src/protocols/PhysicalLayer/PhysicalLayer.cpp}{\tt{src/protocols/PhysicalLayer/PhysicalLayer.cpp}} にあり、\newline 与えられた str の内容を変えることなく最終的に PhysicalLayer::transmit(uint8\_t* str, size\_t len, uint8\_t addr) を呼び出す。
+ \item PhysicalLayer::transmit(uint8\_t* str, size\_t len, uint8\_t addr) は\newline\href{https://github.com/jgromes/RadioLib/blob/master/src/protocols/PhysicalLayer/PhysicalLayer.h}{\tt{src/protocols/PhysicalLayer/PhysicalLayer.h}} において純粋仮想関数として定義されているため、PhysicalLayer を継承した各コントローラの transmit() が実際の処理を担うこととなる。
+ \item SX1278 クラスは SX1278 Class Reference (\url{https://jgromes.github.io/RadioLib/class_s_x1278.html}) にあるように、PhysicalLayer → SX127x → SX1278 クラスを継承する。
+ \item SX1278 の送信処理は SX127x::transmit(uint8\_t *data, size\_t len, uint8\_t addr)\newline(\href{https://github.com/jgromes/RadioLib/blob/master/src/modules/SX127x/SX127x.cpp}{\tt{src/modules/SX127x/SX127x.cpp}}) にあり、ここから SX127x::startTransmit(uint8\_t* data, size\_t len, uint8\_t addr) を呼び出して SX1278 の送信用 FIFO にデータを書き込む。
+ \item ここまでの経路において、radio.transmit() で与えられたデータは無加工で SX1278 に渡るため、RadioLib 内で暗号化は行われないと言える。
+\end{enumerate}
+
+\section*{アプリケーション}
+
+既に LoRaKissTNC (\url{https://github.com/w-ockham/LoRaKissTNC/}) で免許を受けたという実例があるが、このアプリケーションを RadioLib 向けに移植した物を \url{https://github.com/jg1uaa/LoRaKissTNC/tree/jg1uaa/} で公開している。これは使用するライブラリを Arduino-LoRa (\url{https://github.com/sandeepmistry/arduino-LoRa/}) から RadioLib に変えただけであり、操作方法および動作については全て移植元に準ずる。通信プロトコルについても違いは無く、web サイト上で公開されているが、以下にも転記する。
+
+\section*{通信プロトコル}
+
+\subsection*{変調パラメータ}
+\begin{center}
+ \begin{tabular}{|c|c|}
+  \hline
+  {パラメータ} & {値} \\
+  \hline
+  {プリアンブル長} & {12 シンボル (レジスタ値 8)} \\
+  {ヘッダ} & {Explicit} \\
+  {SYNC ワード} & {0x12 (PRIVATE)} \\
+  {帯域} & {7.8 - 20.8 kHz (デフォルト値 15.6kHz)} \\
+  {拡散率} & {6 - 12 (デフォルト値 9)} \\
+  {コーディングレート} & {5/8} \\
+  {Payload CRC} & {無し} \\
+  \hline
+ \end{tabular}
+\end{center}
+
+\subsection*{パケットフォーマット}
+
+\begin{center}
+ \begin{tabular}{|c|c|c|c|}
+  \hline
+  {プリアンブル} & {SYNC} & {ヘッダ} & {ペイロード} \\
+  \hline
+  {00 (12 シンボル分)} & {0x12} & {Explicit ヘッダ} & {(下記)} \\
+  \hline
+ \end{tabular}
+\end{center}
+
+パケットは Explicit ヘッダモードで送信され、Explicit ヘッダにはペイロード長、ペイロードのコーディングレート、ペイロードの CRC の有無 (本方式では無) が入る。ヘッダ自身はコーディングレート 4/8 で CRC 付きで送信される。詳細については \href{https://www.hoperf.com/data/upload/portal/20190801/RFM98W-V2.0.pdf}{HopeRF RFM98W データシート} (PDF) を参照。
+
+\subsubsection*{ペイロード}
+
+ペイロードには平文を使用する「平文ペイロード」と AX.25 に準拠したパケットフォーマットを使用する「AX.25 ペイロード」の 2 種類がある。
+
+\subsubsection*{平文ペイロード}
+
+LoRa トランシーバ局間で、無手順でメッセージ交換を行う際に用いる。平文ペイロードはユーザが入力する平文を以下の形式で送信する。
+
+\begin{center}
+ \begin{tabular}{|c|c|c|}
+  \hline
+  {コールサイン} & {デリミタ} & {メッセージ} \\
+  \hline
+  {自局コールサイン} & {$:>$} & {メッセージ (任意長)} \\
+  \hline
+ \end{tabular}
+\end{center}
+
+自局コールサインはアプリケーションで指定するコールサインとする。メッセージは UTF-8 でエンコーディングされた平文テキストが入る。
+各局呼び出し時にはメッセージに CQ の文字列を、相手局を指定した交信の場合には相手局コールサインを入力する。
+
+\subsubsection*{AX.25 ペイロード}
+LoRa トランシーバを \href{http://www.aprs.org/doc/APRS101.PDF}{APRS} の TNC (ターミナルノードコントローラ) として用いる場合に、AX.25 ペイロードを用いる。
+
+ペイロードには APRS パケットが使用される。\href{https://www.tapr.org/pdf/AX25.2.2.pdf}{AX.25 Link Access Protocol for Amateur Packet Radio} に準拠した以下のフォーマットがペイロードとなる。
+
+\begin{center}
+ \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+  \hline
+  {Flag} & {Destination} & {Source} & {Digipeater} & {Control} & {Protocol} & {Information} & {FCS} & {Flag} \\
+  {} & {Address} & {Address} & {Addresses} & {Field} & {Field} & {Field} & {} & {} \\
+  \hline
+  {0x7e} & {相手局} & {自局} & {APRS} & {0x03} & {0xf0} & {任意長} & {フレーム} & {0x7e} \\
+  {} & {コール} & {コール} & {デジピート} & {} & {} & {データ} & {チェック} & {} \\
+  {} & {サイン} & {サイン} & {アドレス} & {} & {} & {} & {シーケンス} & {} \\
+  {} & {} & {} & {} & {} & {} & {} & {(2byte)} & {} \\
+  \hline
+ \end{tabular}
+\end{center}
+
+APRS の詳細については \href{http://www.aprs.org/doc/APRS101.PDF}{APRS PROTOCOL REFERENCE Protocol Version1.0)} 及び \href{http://www.aprs.org/aprs11.html}{APRS SPEC Addendum 1.1} を参照。
+
+\vspace{1cm}
+【以下余白】
+
+\end{document}
