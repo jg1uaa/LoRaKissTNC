@@ -1,6 +1,6 @@
-% uplatex rfm98
-% uplatex rfm98
-% dvipdfmx rfm98
+% uplatex sx1280
+% uplatex sx1280
+% dvipdfmx sx1280
 
 \documentclass[a4j,oneside]{ujbook}
 \usepackage[schinese,japanese]{pxbabel} % \foreignlanguage{schinese}{}
@@ -17,29 +17,29 @@
 \author{no name}
 \date{\today}
 
-\chapter*{第 5 送信機系統図}
+\chapter*{第 6 送信機系統図}
 
 \setlength{\unitlength}{4mm}
 \begin{picture}(35,25)
 \put(0,13){\dashbox{0.125}(8,4){\begin{tabular}{l}{電子計算機 (パーソ}\\{ナルコンピュータや}\\{スマートフォン等)}\end{tabular}}}
 \put(9,15){\vector(-1,0){1}}
 \put(9,15){\vector(1,0){1}}
-\put(10,13){\framebox(8,4){\begin{tabular}{l}{MCU ATmega328}\\{※ 互換 MCU の}\\{場合あり}\end{tabular}}}
+\put(10,10){\framebox(8,8){\begin{tabular}{l}{MCU MD-328D}\\{※ ATmega328/}\\{LGT8F328 等}\\{互換 MCU の}\\{場合あり}\end{tabular}}}
 \put(19,15){\vector(-1,0){1}}
 \put(19,15){\vector(1,0){1}}
-\put(20,13){\framebox(8,4){\begin{tabular}{l}{Transceiver}\\{RF98}\\{※ SX1278 互換}\end{tabular}}}
+\put(20,13){\framebox(8,4){\begin{tabular}{l}{Transceiver}\\{SX1280}\end{tabular}}}
 \put(24,11){\vector(0,1){2}}
-\put(22,7){\framebox(4,4){\begin{tabular}{l}{Xtal}\\{32MHz}\end{tabular}}}
+\put(22,7){\framebox(4,4){\begin{tabular}{l}{Xtal}\\{52MHz}\end{tabular}}}
 
-\put(20,5){\begin{tabular}{l}{HopeRF RFM98W}\\{LoRa Module}\end{tabular}}
+\put(19,5){\begin{tabular}{l}{Ebyte E28-2G4M12S}\\{LoRa Module}\end{tabular}}
 \put(19,3){\dashbox{0.125}(10,15)}
 
-\put(10,3){第 5 送信機}
+\put(10,3){第 6 送信機}
 \put(9,2){\dashbox{0.25}(21,17)}
 
 \put(28,15){\line(1,0){3}}
 \put(31,15){\line(0,1){5}}
-\put(31,14){438 〜 439 MHz}
+\put(31,14){2427 〜 2450 MHz}
 
 \put(31,20){\line(0,1){2}}
 \put(31,20){\line(-1,2){1}}
@@ -54,15 +54,15 @@
  {諸元} \\
  \hline
  {電波型式} & {F1D} \\
- {通信速度} & {11.425 〜 1560 bps} \\
+ {通信速度} & {297.55 〜 203125 bps} \\
  {変調方式} & {LoRa 変調 (チャープ・スペクトラム拡散変調)} \\
- {占有周波数帯域幅} & {7.8 〜 20.8 kHz} \\
- {拡散率} & {\( 2^{SF} \) (SF = 6 〜 12)} \\
+ {占有周波数帯域幅} & {203.125 〜 1625.0 kHz} \\
+ {拡散率} & {\( 2^{SF} \) (SF = 5 〜 12)} \\
  {誤り訂正符号} & {ハミング符号 (5 〜 8, 4)} \\
  {符号構成} & {LoRa 規格準拠}
 \end{tabular}
 
 \vspace{1cm}
-※ RF98 制御用ソフトウェアの概要については別紙に記す
+※ E28-2G4M12S 制御用ソフトウェアの概要については別紙に記す
 
 \end{document}

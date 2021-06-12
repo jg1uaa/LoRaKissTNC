@@ -1,18 +1,18 @@
 # LoRaトランシーバの通信方式
 
-以下に記した通信方式は、フォーク元となる[w-ockham/LoRaKissTNC](https://github.com/w-ockham/LoRaKissTNC/)の[LoRaトランシーバの通信方式](https://github.com/w-ockham/LoRaKissTNC/blob/master/Protocol.md)とまったく同じものです。
+以下に記した通信方式は、フォーク元となる[w-ockham/LoRaKissTNC](https://github.com/w-ockham/LoRaKissTNC/)の[LoRaトランシーバの通信方式](https://github.com/w-ockham/LoRaKissTNC/blob/master/Protocol.md)を2.4GHzモジュール向けに変更したものです。
 
 ## LoRa変調
 LoRa変調は以下のパラメータを用います。
 
 | パラメータ | 値 |
 |:---------:|:---:|
-|プリアンブル長| 12シンボル（レジスタ値8) |
+|プリアンブル長| 12シンボル (レジスタ値8) |
 |ヘッダー| Explicit |
 |SYNCワード|0x12 (PRIVATE) |
-|帯域 | 7.8 - 20.8 kHz(デフォルト値15.6kHz) |
-|拡散率| 6 - 12 (デフォルト値9) |
-|コーディングレート| 5 - 8 (デフォルト値8) |
+|帯域 | 203.125 - 1625.0 kHz(デフォルト値406.25kHz) |
+|拡散率| 5 - 12 (デフォルト値12) |
+|コーディングレート| 5 - 8 (デフォルト値5) |
 |Payload CRC| 無し |
 
 ### LoRaパケットフォーマット
@@ -24,7 +24,7 @@ LoRaパケットフォーマットは以下の通りです。
 
 パケットはExplicitヘッダーモードで送信され、Explicitヘッダにはペイロード長、ペイロードのコーディングレート、
 ペイロードのCRCの有無（本方式では無）が入ります。ヘッダー自身はコーディングレート 4/8でCRC付きで送信されます。
-詳細については [HopeRF RFM98W データシート](https://www.hoperf.com/data/upload/portal/20190801/RFM98W-V2.0.pdf) (PDF) を参照して下さい。
+詳細については [Semtech SX1280 Datasheet](https://semtech.my.salesforce.com/sfc/p/E0000000JelG/a/2R000000HoCW/8EVYKPLcthcKCB_cKzApAc6Xf6tAHtn9.UKcOh7SNmg) (PDF) を参照して下さい。
 
 ### ペイロード
 ペイロードには平文を送る「平文ペイロード」とAX.25に準拠したパケットフォーマットで送る「AX.25ペイロード」の2種類があります。
