@@ -28,9 +28,9 @@
 
   #if MCU_VARIANT == MCU_328P
     const int pinNSS = 10;
-    const int pinNRST = 9;
-    const int pinDIO0 = 2;
-    const int pinDIO1 = 6;
+    const int pinNRST = 3;
+    const int pinBUSY = 9;
+    const int pinDIO1 = 2;
     // const int pinLedRx = 5;
     // const int pinLedTx = 4;
 
@@ -39,11 +39,11 @@
   #if MCU_VARIANT == MCU_32U4
     const int pinNSS  = 8;
     const int pinNRST = 4;
-    const int pinDIO0 = 7;
+    const int pinBUSY = 7;
     const int pioDIO1 = 6;
   #endif
 
-  const long serialBaudRate   = 9600;
+  const long serialBaudRate   = 38400;
 
   int loraMaxBackoff = 10000;
   int lbtDuration = 3000;
@@ -54,18 +54,18 @@
   boolean channelBusy = false;
 
   // Default LoRa settings
-  int       loraSpreadingFactor = 9;
-  int       loraCodingRate      = 8;
-  int       loraTxPower         = 20;
+  int       loraSpreadingFactor = 12;
+  int       loraCodingRate      = 5;
+  int       loraTxPower         = 13;
   int       loraPrlen = 8;
   bool      loraCRC = false;
   int       loraSyncWord = 0x12;
 
-  float bandWidthTable[] = { 7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0};
-  uint32_t  loraBandwidth       = 2;
-  const uint32_t freq_low  = 438.0E6;
-  const uint32_t freq_high = 439.0E6;
-  float loraFrequency = 438.51;
+  float bandWidthTable[] = { 203.125, 406.25, 812.5, 1625.0 };
+  uint32_t  loraBandwidth       = 1;
+  const uint32_t freq_low  = 2427.0E6;
+  const uint32_t freq_high = 2450.0E6;
+  float loraFrequency = 2438.50;
 
   uint8_t txBuffer[MTU];
   uint8_t rxBuffer[MTU];

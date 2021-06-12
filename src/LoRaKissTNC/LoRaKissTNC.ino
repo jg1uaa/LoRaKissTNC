@@ -9,7 +9,7 @@ bool kissMode = false;
 char mycall[16];
 char line_buffer[BUFFSIZE];
 int bufc = 0;
-SX1278 LoRa = new Module(pinNSS, pinDIO0, pinNRST, pinDIO1);
+SX1280 LoRa = new Module(pinNSS, pinDIO1, pinNRST, pinBUSY);
 
 void setup() {
   // put your setup code here, to run once:
@@ -25,19 +25,18 @@ void setup() {
 
 bool initLoRa() {
   mycall[0] = '\0';
-  LoRa.clearDio0Action();
+  LoRa.clearDio1Action();
   waitFor = Nothing;
   LoRa.reset();
 
   int state = LoRa.begin(loraFrequency, bandWidthTable[loraBandwidth],
-      loraSpreadingFactor, loraCodingRate, loraSyncWord, loraTxPower,
-      loraPrlen, 0);
+      loraSpreadingFactor, loraCodingRate, loraTxPower, loraPrlen);
   if (state != ERR_NONE) {
     return false;
   }
 
   LoRa.setCRC(loraCRC);
-  LoRa.setDio0Action(dio0Callback);
+  LoRa.setDio1Action(dio1Callback);
   waitFor = RxDone;
   LoRa.startReceive();
   return true;
@@ -136,7 +135,7 @@ void cadCallback(boolean cadDetected) {
 }
 #endif
 
-void dio0Callback() {
+void dio1Callback() {
   if (waitFor != RxDone) {
     waitFor = Nothing;
     return;
@@ -248,7 +247,7 @@ void set_Freq(uint32_t f) {
 
 void set_BW(int bw) {
   mesg("BW",bw);
-  if (bw < 0 || bw > 3) {
+  if (bw < 0 || bw >= (sizeof(bandWidthTable) / sizeof(bandWidthTable[0]))) {
     mesg("ERR","unsupported bandwidth.");
     return;
   }
@@ -258,7 +257,7 @@ void set_BW(int bw) {
 
 void set_SF(int sf) {
   mesg("SF",sf);
-  if (sf < 6 || sf > 12) {
+  if (sf < 5 || sf > 12) {
     mesg("ERR","unsupported spreding factor.");
     return;
   }
@@ -278,7 +277,7 @@ void set_CR(int cr) {
 
 void set_Pwr(int pwr) {
   mesg("PWR",pwr);
-  if (pwr > 20 || pwr < 2) {
+  if (pwr > 13 || pwr < -18) {
     mesg("ERR","unsupported power.");
     return;
   }
