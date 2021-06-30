@@ -78,7 +78,7 @@ RadioLib のスケッチ例 (\href{https://github.com/jgromes/RadioLib/blob/mast
   \hline
   {パラメータ} & {値} \\
   \hline
-  {プリアンブル長} & {12 シンボル (レジスタ値 8)} \\
+  {プリアンブル長} & {(※)} \\
   {ヘッダ} & {Explicit} \\
   {SYNC ワード} & {0x12 (PRIVATE)} \\
   {帯域} & {203.125 - 1625.0 kHz (デフォルト値 406.25kHz)} \\
@@ -89,6 +89,8 @@ RadioLib のスケッチ例 (\href{https://github.com/jgromes/RadioLib/blob/mast
  \end{tabular}
 \end{center}
 
+(※) プリアンブル長は、拡散率が 5 もしくは 6 の場合は 16 シンボル (設定長 12)、それ以外の拡散率の場合は 12 シンボル (設定長 8) とする。
+
 \subsection*{パケットフォーマット}
 
 \begin{center}
@@ -96,7 +98,7 @@ RadioLib のスケッチ例 (\href{https://github.com/jgromes/RadioLib/blob/mast
   \hline
   {プリアンブル} & {SYNC} & {ヘッダ} & {ペイロード} \\
   \hline
-  {00 (12 シンボル分)} & {0x12} & {Explicit ヘッダ} & {(下記)} \\
+  {00 (12〜16 シンボル分)} & {0x12} & {Explicit ヘッダ} & {(下記)} \\
   \hline
  \end{tabular}
 \end{center}

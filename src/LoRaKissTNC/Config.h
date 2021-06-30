@@ -57,7 +57,7 @@
   int       loraSpreadingFactor = 12;
   int       loraCodingRate      = 5;
   int       loraTxPower         = 13;
-  int       loraPrlen = 8;
+  #define   loraPrlen ((loraSpreadingFactor <= 6) ? 12 : 8)
   bool      loraCRC = false;
   int       loraSyncWord = 0x12;
 

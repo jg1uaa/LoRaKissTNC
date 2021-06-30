@@ -29,8 +29,15 @@ bool initLoRa() {
   waitFor = Nothing;
   LoRa.reset();
 
+#if RADIOLIB_VERSION <= 0x040402ff
+  // RadioLib 4.4.2 or earlier works LoRa syncword = 0x12 (PRIVATE) as default
   int state = LoRa.begin(loraFrequency, bandWidthTable[loraBandwidth],
       loraSpreadingFactor, loraCodingRate, loraTxPower, loraPrlen);
+#else
+  int state = LoRa.begin(loraFrequency, bandWidthTable[loraBandwidth],
+      loraSpreadingFactor, loraCodingRate, loraSyncWord, 
+      loraTxPower, loraPrlen);
+#endif
   if (state != ERR_NONE) {
     return false;
   }
