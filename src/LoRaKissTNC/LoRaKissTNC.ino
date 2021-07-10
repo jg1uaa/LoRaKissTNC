@@ -316,7 +316,7 @@ void do_command(char buffer[]) {
   uint32_t f;
   int bw, sf, cr, pwr, backoff;
 
-  // Calling RadioLib's function at setting Freq/BW/SF/CR turns SX127x
+  // Calling RadioLib's function at setting Freq/BW/SF/CR turns SX128x
   // stand-by state. To kick receiver later, set "wait for nothing"
   // in advance.
   LoRa.standby();
